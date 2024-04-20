@@ -36,40 +36,69 @@ __device__ __host__ void tomas(float a[],float b[],float c[],float d[],float x[]
         x[i]=d_prime[i]-c_prime[i]*x[i+1];
 }
 
-__global__ void kernel(TemperatureMatrix *mat)
+__global__ void kernel_x(TemperatureMatrix* mat,TemperatureMatrix* old_mat)
 {
     int i=threadIdx.x+blockIdx.x*blockDim.x;
-    float u_temp[PIC_SIZE],u[PIC_SIZE];
+    if(i==0||i==PIC_SIZE-1)
+        return;
+    float u_temp[PIC_SIZE];
     for(int j=0;j<mat->nx;++j)
     {
-        u_temp[j]=mat->pic[i][j];
+        if(i>0 && i<PIC_SIZE-1)
+            u_temp[j]=old_mat->pic[i][j]+old_mat->ay*(old_mat->pic[i+1][j]-2*old_mat->pic[i][j]+old_mat->pic[i-1][j]);
     }
     u_temp[0]=u_temp[1];
     u_temp[PIC_SIZE-1]=u_temp[PIC_SIZE-2];
     tomas(mat->A_y[0],mat->A_y[1],mat->A_y[2],u_temp,mat->pic[i]);
+}
+
+__global__ void kernel_y(TemperatureMatrix *mat,TemperatureMatrix* old_mat)
+{
+    int i=threadIdx.x+blockIdx.x*blockDim.x;
+    if(i==0||i==PIC_SIZE-1)
+        return;
+    float u_temp[PIC_SIZE],u[PIC_SIZE];
     for(int j=0;j<mat->ny;++j)
     {
-        u_temp[j]=mat->pic[j][i];
+        if(i>0 && i<PIC_SIZE-1)
+            u_temp[j]=old_mat->pic[j][i]+old_mat->ax*(old_mat->pic[j][i+1]-2*old_mat->pic[j][i]+old_mat->pic[j][i-1]);
     }
+    u_temp[0]=MAX_TEMP;
+    u_temp[PIC_SIZE-1]=LOW_TEMP;
     tomas(mat->A_x[0],mat->A_x[1],mat->A_x[2],u_temp,u);
     for(int j=0;j<mat->ny;++j)
         mat->pic[j][i]=u[j];
     init_temperature(mat);
 }
 
+__global__ void set_kernel(TemperatureMatrix* mat1,TemperatureMatrix* mat2)
+{
+    int i=threadIdx.x+blockIdx.x*blockDim.x;
+    for(int j=0;j<PIC_SIZE;++j)
+        mat1->pic[i][j]=mat2->pic[i][j];
+}
+
 int main()
 {
     TemperatureMatrix* mat=new TemperatureMatrix();
+    TemperatureMatrix* old_mat=new TemperatureMatrix();
     init_temperature(mat);
     Draw::draw_pic(mat->pic,1);
-    for(int i=2;i<=30;i++)
+    for(int i=2;i<=50;i++)
     {
         for(int j=0;j<mat->steps;j++)
         {
-            kernel<<<1,PIC_SIZE>>>(mat);
-            auto ret=cudaDeviceSynchronize();
+            kernel_x<<<1,PIC_SIZE>>>(mat,old_mat);
+            auto ret1=cudaDeviceSynchronize();
+            set_kernel<<<1,PIC_SIZE>>>(old_mat,mat);
+            auto ret2=cudaDeviceSynchronize();
+            kernel_y<<<1,PIC_SIZE>>>(mat,old_mat);
+            auto ret3=cudaDeviceSynchronize();
+            set_kernel<<<1,PIC_SIZE>>>(old_mat,mat);
+            auto ret4=cudaDeviceSynchronize();
         }
         Draw::draw_pic(mat->pic,i);
+        printf("%d\n",i-1);
     }
     return 0;
 }

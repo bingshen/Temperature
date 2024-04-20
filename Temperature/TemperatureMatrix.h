@@ -20,6 +20,13 @@ public:
 	float A_y[3][PIC_SIZE];
 	float ax,ay;
 
+	void set(TemperatureMatrix* mat)
+	{
+		for(int i=0;i<PIC_SIZE;++i)
+			for(int j=0;j<PIC_SIZE;++j)
+				this->pic[i][j]=mat->pic[i][j];
+	}
+
 	TemperatureMatrix()
 	{
 		this->nx=PIC_SIZE;
