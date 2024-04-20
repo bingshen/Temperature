@@ -1,5 +1,8 @@
 ﻿#include "TemperatureMatrix.h"
 #include "Draw.h"
+#include <iostream>
+#include <chrono>
+#include <thread>
 
 __device__ __host__ void init_temperature(TemperatureMatrix* mat)
 {
@@ -80,12 +83,17 @@ __global__ void set_kernel(TemperatureMatrix* mat1,TemperatureMatrix* mat2)
 
 int main()
 {
+    auto start=std::chrono::high_resolution_clock::now();
     TemperatureMatrix* mat=new TemperatureMatrix();
     TemperatureMatrix* old_mat=new TemperatureMatrix();
     init_temperature(mat);
     Draw::draw_pic(mat->pic,1);
+    auto end=std::chrono::high_resolution_clock::now();
+    auto duration=std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
+    cout<<1<<",cost:"<<duration.count()<<"ms"<<endl;
     for(int i=2;i<=50;i++)
     {
+        auto start1=std::chrono::high_resolution_clock::now();
         for(int j=0;j<mat->steps;j++)
         {
             kernel_x<<<1,PIC_SIZE>>>(mat,old_mat);
@@ -98,7 +106,9 @@ int main()
             auto ret4=cudaDeviceSynchronize();
         }
         Draw::draw_pic(mat->pic,i);
-        printf("%d\n",i-1);
+        auto end1=std::chrono::high_resolution_clock::now();
+        auto duration1=std::chrono::duration_cast<std::chrono::milliseconds>(end1-start1);
+        cout<<i-1<<",cost:"<<duration1.count()<<"ms"<<endl;
     }
     return 0;
 }
