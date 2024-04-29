@@ -52,7 +52,7 @@ __global__ void kernel_x(TemperatureMatrix* mat,TemperatureMatrix* old_mat)
     }
     u_temp[0]=u_temp[1];
     u_temp[PIC_SIZE-1]=u_temp[PIC_SIZE-2];
-    tomas(mat->A_y[0],mat->A_y[1],mat->A_y[2],u_temp,mat->pic[i]);
+    thomas(mat->A_y[0],mat->A_y[1],mat->A_y[2],u_temp,mat->pic[i]);
 }
 
 __global__ void kernel_y(TemperatureMatrix *mat,TemperatureMatrix* old_mat)
@@ -68,7 +68,7 @@ __global__ void kernel_y(TemperatureMatrix *mat,TemperatureMatrix* old_mat)
     }
     u_temp[0]=MAX_TEMP;
     u_temp[PIC_SIZE-1]=LOW_TEMP;
-    tomas(mat->A_x[0],mat->A_x[1],mat->A_x[2],u_temp,u);
+    thomas(mat->A_x[0],mat->A_x[1],mat->A_x[2],u_temp,u);
     for(int j=0;j<mat->ny;++j)
         mat->pic[j][i]=u[j];
     init_temperature(mat);
