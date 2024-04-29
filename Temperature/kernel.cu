@@ -13,7 +13,7 @@ __device__ __host__ void init_temperature(TemperatureMatrix* mat)
     }
 }
 
-__device__ __host__ void tomas(float a[],float b[],float c[],float d[],float x[])
+__device__ __host__ void thomas(float a[],float b[],float c[],float d[],float x[])
 {
     int n=PIC_SIZE;
     float c_prime[PIC_SIZE-1];
@@ -91,7 +91,7 @@ int main()
     auto end=std::chrono::high_resolution_clock::now();
     auto duration=std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
     cout<<1<<",cost:"<<duration.count()<<"ms"<<endl;
-    for(int i=2;i<=50;i++)
+    for(int i=2;i<=100;i++)
     {
         auto start1=std::chrono::high_resolution_clock::now();
         for(int j=0;j<mat->steps;j++)
